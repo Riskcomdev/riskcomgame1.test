@@ -1,2 +1,0 @@
-# riskcomgame.test
-hello
