@@ -1,83 +1,507 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Score Counter Game</title>
-<style>
-  #game-container {
-    text-align: center;
-    margin-top: 100px;
+  <title>ยืมอุปกรณ์</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+/* ปรับแต่งทั่วไป */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f9;
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+h4 {
+  color: #4CAF50;
+}
+
+form {
+  margin-bottom: 20px;
+}
+
+label {
+  display: inline-block;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+input[type="date"], input[type="text"], select {
+  width: 100%;
+  padding: 8px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.itemDiv {
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.cart-buttons button, .submit {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.cart-buttons button:disabled, .delete-btn, .delete-history-btn {
+  background-color: red;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.cart-buttons button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+table, th, td {
+  border: 1px solid #ddd;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+}
+
+th {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+  .container {
+    padding: 10px;
   }
 
-  #score {
-    font-size: 24px;
-    margin-bottom: 20px;
-  }
-
-  .circle {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background-color: red;
-    margin: 10px;
-    display: inline-block;
-    cursor: pointer;
-  }
-
-  #start-button, #stop-button {
-    padding: 10px 20px;
+  h4 {
     font-size: 18px;
-    background-color: green;
-    color: white;
-    border: none;
-    cursor: pointer;
   }
-</style>
+
+  label {
+    font-size: 14px;
+  }
+
+  input[type="date"], input[type="text"], select {
+    padding: 6px;
+    font-size: 14px;
+  }
+
+  .cart-buttons button, .submit, .delete-btn, .delete-history-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+
+  th, td {
+    padding: 8px;
+    font-size: 14px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .container {
+    padding: 5px;
+  }
+
+  h4 {
+    font-size: 16px;
+  }
+
+  label {
+    font-size: 12px;
+  }
+
+  input[type="date"], input[type="text"], select {
+    padding: 5px;
+    font-size: 12px;
+  }
+
+  .cart-buttons button, .submit, .delete-btn, .delete-history-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  th, td {
+    padding: 6px;
+    font-size: 12px;
+  }
+}
+
+  </style>
 </head>
 <body>
-<div id="game-container">
-  <div id="score">Score: 0</div>
-  <button id="start-button">Start Game</button>
-  <button id="stop-button" style="display: none;">Stop Game</button>
-  <div id="circles-container"></div>
-</div>
-<script>
-  var score = 0;
-  var circlesContainer = document.getElementById('circles-container');
-  var intervalId;
+  <h4>เลือกวันที่และเวลา</h4>
+  <form id="dateFilterForm" onsubmit="return false;">
+    <label for="filterDateIn">วันที่:</label>
+    <input type="date" id="filterDateIn" name="filterDateIn" required>
+    <label for="filterDateOut">ถึงวันที่:</label>
+    <input type="date" id="filterDateOut" name="filterDateOut" required>
+    <label for="cktime">เวลา:</label>
+    <select id="cktime" name="cktime" required>
+      <option value="ช่วงเช้า(8:30 AM - 12:00 PM)">ช่วงเช้า(8:30 AM - 12:00 PM)</option>
+      <option value="ช่วงบ่าย(1:00 PM - 4:30 PM)">ช่วงบ่าย(1:00 PM - 4:30 PM)</option>
+      <option value="ทั้งวัน(24hr)">ทั้งวัน(24hr)</option>
+      
+    </select>
+  </form>
 
-  function createCircle() {
-    var circle = document.createElement('div');
-    circle.classList.add('circle');
-    circle.addEventListener('click', function() {
-      score++;
-      document.getElementById('score').innerText = 'Score: ' + score;
-      circlesContainer.removeChild(circle);
+  <h4>รายการอุปกรณ์</h4>
+  <div id="itemsContainer"></div>
+
+  <h4>ตะกร้า</h4>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>ชื่ออุปกรณ์</th>
+        <th>หมายเลขซีเรียล</th>
+        <th>หมวดหมู่</th>
+        <th>ลบ</th>
+      </tr>
+    </thead>
+    <tbody id="cartTableBody"></tbody>
+  </table>
+
+  <h4>แสดงวันที่และเวลา</h4>
+  <form id="dateFilterForm2" onsubmit="return false;">
+    <label for="date_in">วันที่:</label>
+    <input type="text" id="date_in" name="date_in" readonly>
+    <label for="date_out">ถึงวันที่:</label>
+    <input type="text" id="date_out" name="date_out" readonly>
+    <label for="time">ช่วงเวลา:</label>
+    <input type="text" id="time" name="time" readonly>
+  </form>
+
+  <input type="text" id="itemsshow" name="itemsshow"><br>
+  <button type="submit" class="submit" onclick="handleFormSubmit(this.form)">ส่งรายการยืม</button>
+
+  <h4>บันทึกรายการยืม</h4>
+  <table id="borrowingHistoryTable">
+    <thead>
+      <tr>
+        <th>ลำดับ</th>
+        <th>วันที่เวลาบันทึก</th>
+        <th>วันที่เริ่มต้น</th>
+        <th>ถึงวันที่</th>
+        <th>เวลา</th>
+        <th>รายการที่ยืม</th>
+        <th>ลบ</th>
+      </tr>
+    </thead>
+    <tbody id="borrowingHistoryBody">
+      <!-- Borrowing history rows will be dynamically added here -->
+    </tbody>
+  </table>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      function formatDate(date) {
+        const d = new Date(date);
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${year}-${month}-${day}`;
+      }
+
+      const today = new Date();
+      const formattedDate = formatDate(today);
+      document.getElementById('filterDateIn').value = formattedDate;
+      document.getElementById('filterDateOut').value = formattedDate;
+      document.getElementById('filterDateIn').min = formattedDate;
+      document.getElementById('filterDateOut').min = formattedDate;
+
+      function updateTimeOptions() {
+        const filterDateInValue = document.getElementById('filterDateIn').value;
+        const filterDateOutValue = document.getElementById('filterDateOut').value;
+        const cktimeElement = document.getElementById('cktime');
+        const currentTime = new Date().getHours();
+        const currentMinutes = new Date().getMinutes();
+
+        cktimeElement.innerHTML = '';
+
+        if (filterDateInValue !== filterDateOutValue) {
+          cktimeElement.innerHTML = `<option value="ทั้งวัน(24hr)">ทั้งวัน(24hr)</option>`;
+          cktimeElement.value = "ทั้งวัน(24hr)";
+        } else if (filterDateInValue === formattedDate) {
+          if (currentTime >= 16 || (currentTime === 15 && currentMinutes >= 30)) {
+            cktimeElement.innerHTML = `<option value="ทั้งวัน(24hr)">ทั้งวัน(24hr)</option>`;
+          } else if (currentTime >= 12) {
+            cktimeElement.innerHTML = `
+              <option value="ช่วงบ่าย(1:00 PM - 4:30 PM)">ช่วงบ่าย(1:00 PM - 4:30 PM)</option>
+              <option value="ทั้งวัน(24hr)">ทั้งวัน(24hr)</option>
+            `;
+            cktimeElement.value = "ช่วงบ่าย(1:00 PM - 4:30 PM)";
+          } else if (currentTime >= 8) {
+            cktimeElement.innerHTML = `
+              <option value="ช่วงเช้า(8:30 AM - 12:00 PM)">ช่วงเช้า(8:30 AM - 12:00 PM)</option>
+              <option value="ช่วงบ่าย(1:00 PM - 4:30 PM)">ช่วงบ่าย(1:00 PM - 4:30 PM)</option>
+              <option value="ทั้งวัน(24hr)">ทั้งวัน(24hr)</option>
+            `;
+            cktimeElement.value = "ช่วงเช้า(8:30 AM - 12:00 PM)";
+          } else {
+            cktimeElement.innerHTML = `<option value="ทั้งวัน(24hr)">ทั้งวัน(24hr)</option>`;
+            cktimeElement.value = "ทั้งวัน(24hr)";
+          }
+        } else {
+          cktimeElement.innerHTML = `
+            <option value="ช่วงเช้า(8:30 AM - 12:00 PM)">ช่วงเช้า(8:30 AM - 12:00 PM)</option>
+            <option value="ช่วงบ่าย(1:00 PM - 4:30 PM)">ช่วงบ่าย(1:00 PM - 4:30 PM)</option>
+            <option value="ทั้งวัน(24hr)">ทั้งวัน(24hr)</option>
+          `;
+          cktimeElement.value = "ทั้งวัน(24hr)";
+        }
+      }
+
+      function syncFormData() {
+        const dateIn = document.getElementById('filterDateIn').value;
+        const dateOut = document.getElementById('filterDateOut').value;
+        const time = document.getElementById('cktime').value;
+
+        document.getElementById('date_in').value = dateIn;
+        document.getElementById('date_out').value = dateOut;
+        document.getElementById('time').value = time;
+      }
+
+      document.getElementById('filterDateIn').addEventListener('change', () => {
+        updateTimeOptions();
+        syncFormData();
+        displayItems(items);
+      });
+
+      document.getElementById('filterDateOut').addEventListener('change', () => {
+        updateTimeOptions();
+        syncFormData();
+        displayItems(items);
+      });
+
+      document.getElementById('cktime').addEventListener('change', () => {
+        syncFormData();
+        displayItems(items);
+      });
+
+      updateTimeOptions();
+      syncFormData();
     });
-    circlesContainer.appendChild(circle);
-  }
 
-  document.getElementById('start-button').addEventListener('click', function() {
-    score = 0;
-    document.getElementById('score').innerText = 'Score: ' + score;
-    intervalId = setInterval(createCircle, 1000);
-    document.getElementById('start-button').style.display = 'none';
-    document.getElementById('stop-button').style.display = 'inline-block';
-    setTimeout(function() {
-      clearInterval(intervalId);
-      document.getElementById('start-button').style.display = 'inline-block';
-      document.getElementById('stop-button').style.display = 'none';
-      alert('Game over! Your final score is: ' + score);
-    }, 5000);
+    var items = [
+      { name: 'Acer travelmate P214', serialNumber: '56-7440-002-00006(66)', category: 'Laptop' },
+      { name: 'Acer travelmate P214', serialNumber: '56-7440-002-00010(66)', category: 'Laptop' },
+      { name: 'Acer travelmate P214', serialNumber: '56-7440-002-00009(66)', category: 'Laptop' },
+      { name: 'Dell Latitude', serialNumber: '56-7440-002-000(65)', category: 'Laptop' },
+      { name: 'Dell Inspiron', serialNumber: '856-8434-1288(64)', category: 'Laptop' }
+    ];
+
+    function displayItems(items) {
+      var itemsContainer = document.getElementById('itemsContainer');
+      itemsContainer.innerHTML = '';
+
+      var dateIn = document.getElementById('filterDateIn').value;
+      var dateOut = document.getElementById('filterDateOut').value;
+      var time = document.getElementById('cktime').value;
+
+      items.forEach(function(item, index) {
+        var itemDiv = document.createElement('div');
+        itemDiv.className = 'itemDiv';
+
+        var buttonHTML = `<button onclick="addToCart(${index})">เพิ่มในตะกร้า</button>`;
+
+        if (isItemAlreadyBorrowed(dateIn, dateOut, time, [item])) {
+          buttonHTML = `<button disabled>ยืมแล้ว</button>`;
+        }
+
+        itemDiv.innerHTML = `
+          <span>${item.name} (Serial No: ${item.serialNumber})</span>
+          <div class="cart-buttons">${buttonHTML}</div>
+        `;
+
+        itemsContainer.appendChild(itemDiv);
+
+        var isInCart = cart.some(cartItem => cartItem.serialNumber === item.serialNumber);
+        var addToCartButton = itemDiv.querySelector('.cart-buttons button');
+        if (isInCart) {
+          addToCartButton.disabled = true;
+          addToCartButton.textContent = 'กำลังยืม';
+          addToCartButton.style.backgroundColor = '#FF8C00';
+          addToCartButton.style.color = 'white';
+        } else {
+          addToCartButton.disabled = false;
+          addToCartButton.textContent = 'เพิ่มในตะกร้า';
+          addToCartButton.style.backgroundColor = '';
+          addToCartButton.style.color = '';
+        }
+      });
+    }
+
+    var cart = [];
+
+    function addToCart(index) {
+      var item = items[index];
+      cart.push(item);
+      displayCart();
+      displayItems(items);
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      displayCart();
+      displayItems(items);
+    }
+
+    function displayCart() {
+      var cartTableBody = document.getElementById('cartTableBody');
+      cartTableBody.innerHTML = '';
+      cart.forEach(function(item, index) {
+        var row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${item.name}</td>
+          <td>${item.serialNumber}</td>
+          <td>${item.category}</td>
+          <td><button class="delete-btn" onclick="removeFromCart(${index})">ลบ</button></td>
+        `;
+        cartTableBody.appendChild(row);
+      });
+
+      var itemsShowInput = document.getElementById('itemsshow');
+      itemsShowInput.value = cart.map(item => item.serialNumber).join(',');
+    }
+
+    function handleFormSubmit(form) {
+      var dateIn = document.getElementById('filterDateIn').value;
+      var dateOut = document.getElementById('filterDateOut').value;
+      var time = document.getElementById('cktime').value;
+      var borrowedItems = cart.map(item => `${item.name} (Serial No: ${item.serialNumber})`).join(', ');
+
+
+      if (!borrowedItems) {
+        Swal.fire('แจ้งเตือน', 'กรุณาเลือกอุปกรณ์ที่ต้องการยืม', 'warning');
+        return;
+      }
+
+      if (isItemAlreadyBorrowed(dateIn, dateOut, time, cart)) {
+        Swal.fire('แจ้งเตือน', 'อุปกรณ์บางรายการถูกยืมในช่วงเวลาที่กำหนดแล้ว', 'warning');
+        return;
+      }
+
+      var borrowingHistory = JSON.parse(localStorage.getItem('borrowingHistory')) || [];
+
+      var newEntry = {
+        id: borrowingHistory.length + 1,
+        timestamp: new Date().toLocaleString(),
+        dateIn: dateIn,
+        dateOut: dateOut,
+        time: time,
+        borrowedItems: borrowedItems
+      };
+
+      borrowingHistory.push(newEntry);
+      localStorage.setItem('borrowingHistory', JSON.stringify(borrowingHistory));
+
+      clearCart();
+
+      displayBorrowingHistory();
+
+      Swal.fire('สำเร็จ', 'บันทึกรายการยืมสำเร็จ', 'success');
+    }
+
+    function clearCart() {
+      cart = [];
+      displayCart();
+    }
+
+    function isItemAlreadyBorrowed(dateIn, dateOut, time, cartItems) {
+  var borrowingHistory = JSON.parse(localStorage.getItem('borrowingHistory')) || [];
+  var isAlreadyBorrowed = false;
+
+  var startDateB = new Date(dateIn);
+  var endDateB = new Date(dateOut);
+
+  cartItems.forEach(function(cartItem) {
+    borrowingHistory.forEach(function(entry) {
+      var startDateA = new Date(entry.dateIn);
+      var endDateA = new Date(entry.dateOut);
+
+      if (entry.borrowedItems.includes(cartItem.serialNumber)) {
+        // Check if the date ranges overlap
+        if (startDateA <= endDateB && startDateB <= endDateA) {
+          // Check if the time ranges overlap
+          if (entry.time === "ทั้งวัน(24hr)" || time === "ทั้งวัน(24hr)" || entry.time === time) {
+            isAlreadyBorrowed = true;
+          } else {
+            // Additional check for partial overlap within the same day
+            if (startDateA.toDateString() === startDateB.toDateString() || endDateA.toDateString() === endDateB.toDateString()) {
+              isAlreadyBorrowed = true;
+            }
+          }
+        }
+      }
+    });
   });
 
-  document.getElementById('stop-button').addEventListener('click', function() {
-    clearInterval(intervalId);
-    document.getElementById('start-button').style.display = 'inline-block';
-    document.getElementById('stop-button').style.display = 'none';
-    alert('Game stopped! Your final score is: ' + score);
-  });
-</script>
+  return isAlreadyBorrowed;
+}
+
+    function displayBorrowingHistory() {
+      var borrowingHistory = JSON.parse(localStorage.getItem('borrowingHistory')) || [];
+      var borrowingHistoryBody = document.getElementById('borrowingHistoryBody');
+      borrowingHistoryBody.innerHTML = '';
+
+      borrowingHistory.forEach(function(entry, index) {
+        var row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${entry.id}</td>
+          <td>${entry.timestamp}</td>
+          <td>${entry.dateIn}</td>
+          <td>${entry.dateOut}</td>
+          <td>${entry.time}</td>
+          <td>${entry.borrowedItems}</td>
+          <td><button class="delete-history-btn" onclick="removeHistoryEntry(${index})">ลบ</button></td>
+        `;
+        borrowingHistoryBody.appendChild(row);
+      });
+    }
+
+    function removeHistoryEntry(index) {
+      var borrowingHistory = JSON.parse(localStorage.getItem('borrowingHistory')) || [];
+      borrowingHistory.splice(index, 1);
+
+      borrowingHistory.forEach((entry, i) => {
+        entry.id = i + 1;
+      });
+
+      localStorage.setItem('borrowingHistory', JSON.stringify(borrowingHistory));
+      displayBorrowingHistory();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      displayItems(items);
+      displayBorrowingHistory();
+    });
+  </script>
 </body>
 </html>
